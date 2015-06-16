@@ -25,7 +25,8 @@ module S3DirectUpload
           callback_method: "POST",
           callback_param: "file",
           key_starts_with: @key_starts_with,
-          key: key
+          key: key,
+          cache_control: "max-age=630720000, public"
         )
       end
 
@@ -45,7 +46,7 @@ module S3DirectUpload
       end
 
       def fields
-        {
+        res = {
           :key => @options[:key] || key,
           :acl => @options[:acl],
           "AWSAccessKeyId" => @options[:aws_access_key_id],
@@ -54,6 +55,8 @@ module S3DirectUpload
           :success_action_status => "201",
           'X-Requested-With' => 'xhr'
         }
+        res['Cache-Control'] = @options[:cache_control] if @options[:cache_control]
+        res
       end
 
       def key
@@ -77,6 +80,7 @@ module S3DirectUpload
             ["starts-with", "$x-requested-with", ""],
             ["content-length-range", 0, @options[:max_file_size]],
             ["starts-with","$content-type", @options[:content_type_starts_with] ||""],
+            ["starts-with", '$Cache-Control', @options[:cache_control] || ''],
             {bucket: @options[:bucket]},
             {acl: @options[:acl]},
             {success_action_status: "201"}
